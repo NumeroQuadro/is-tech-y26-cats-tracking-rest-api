@@ -3,43 +3,39 @@ package com.catstrackingrestapi.CatsTrackingRestAPI.src;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.RestController;
-import source.Models.Cat;
-import source.Models.CatColor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import src.Models.Cat;
+import src.Models.CatColor;
+import src.Models.Role;
 import src.Services.CatService;
 import src.Services.OwnerService;
+import src.Services.UserService;
 
-import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Collection;
 
 @SpringBootApplication
 @RestController
 @EnableJpaRepositories(basePackages = {"src.Repositories"})
-@ComponentScan(basePackages = {"src.Services", "source"})
-@EntityScan(basePackages={"source.Models"})
+@ComponentScan(basePackages = {"src.Services", "source", "Security"})
+@EntityScan(basePackages={"src.Models"})
 public class CatsTrackingRestApiApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(CatsTrackingRestApiApplication.class, args);
 	}
 
 	@Bean
-	CommandLineRunner commandLineRunner(CatService catService, OwnerService ownerService) {
+	CommandLineRunner commandLineRunner(OwnerService ownerService, CatService catService, UserService userService) {
 		return args -> {
-			catService.addCatToMainTable("Tom", "Siberian", LocalDate.of(2019, 1, 1), CatColor.black);
-			catService.addCatToMainTable("Jerry", "Siberian", LocalDate.of(2019, 1, 1), CatColor.semi_color);
-			catService.addFriendToCat("Tom", "Jerry");
-
-			ownerService.addOwnerWithoutCats("Alice", LocalDate.of(1990, 1, 1));
-			ownerService.addOwnerWithInitialCats("Bob", LocalDate.of(1990, 1, 1), new ArrayList<>(List.of("Tom", "Jerry")));
-
-			//catService.deleteCatFromMainTable("Jerry");
+			userService.addAdminIfNotExists("dimonlimon", "fuckfuck");
+			var result = catService.getCatsByColorRelatedToOwner(CatColor.black, "dimonlimon");
+//			ownerService.addOwnerWithoutCats("dimonlimon", LocalDate.of(1, 1, 1));
 		};
 	}
+
 }

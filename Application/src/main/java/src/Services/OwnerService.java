@@ -3,13 +3,10 @@ package src.Services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import source.Models.Cat;
-import source.Models.Owner;
-import source.Models.OwnerCatsID;
-import source.Models.OwnerWithCats;
+import src.Models.*;
 import src.Repositories.CatRepository;
 import src.Repositories.OwnerRepository;
-import src.Repositories.OwnerWithCatsRepository;
+import src.Repositories.UserRepository;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -23,48 +20,42 @@ public class OwnerService {
     @Autowired
     private CatRepository catRepository;
     @Autowired
-    private OwnerWithCatsRepository ownerWithCatsRepository;
-
-    @Transactional
-    public void addOwnerWithInitialCats(String ownerName, LocalDate ownerBirthday, Collection<String> catsNames) {
-        Set<Cat> catsSet = new HashSet<>();
-        var owner = new Owner(ownerName, ownerBirthday, catsSet);
-
-        for (String catName : catsNames) {
-            var catValue = catRepository.findByName(catName);
-
-            if (catValue.isPresent()) {
-                Cat cat = catValue.get();
-                catsSet.add(cat);
-
-            } else {
-                throw new IllegalArgumentException("Cat with name " + catName + " not found");
-            }
-        }
-
-        ownerRepository.save(new Owner(ownerName, ownerBirthday, catsSet));
-
-        Set<Cat> saveCatsSet = new HashSet<>();
-        for (String catName : catsNames) {
-            var catValue = catRepository.findByName(catName);
-
-            if (catValue.isPresent()) {
-                Cat cat = catValue.get();
-                saveCatsSet.add(cat);
-            }
-        }
-
-
-        for (Cat cat : saveCatsSet) {
-            ownerRepository.findByName(ownerName).ifPresent(ownerValue -> {
-                OwnerCatsID id = new OwnerCatsID(ownerValue.getId(), cat.getId());
-                var ownerWithCats = new OwnerWithCats(id, ownerValue, cat);
-                ownerWithCatsRepository.save(ownerWithCats);
-            });
-        }
-    }
+    private UserRepository userRepository;
 
     public void addOwnerWithoutCats(String ownerName, LocalDate ownerBirthday) {
-        ownerRepository.save(new Owner(ownerName, ownerBirthday, new HashSet<>()));
+        var existingUser = userRepository.findByUsername(ownerName).orElseThrow(() -> new IllegalArgumentException("User with username " + ownerName + " not found"));
+        var newOwner = new Owner(existingUser.getId(), ownerName, ownerBirthday, new HashSet<>(), existingUser);
+        ownerRepository.save(newOwner);
+    }
+
+    public Owner findOwnerByName(String name) {
+        var owner = ownerRepository.findByName(name);
+
+        return owner.orElse(null);
+
+    }
+
+    public void updateOwner(Owner owner) {
+        ownerRepository.save(owner);
+    }
+
+    @Transactional
+    public Cat addNewCatAssociatedWithOwner(String ownerName, String catName, String breed, LocalDate birthDate, CatColor color) {
+        Cat cat = new Cat();
+        cat.setName(catName);
+        cat.setBreed(breed);
+        cat.setBirthDate(birthDate);
+        cat.setColor(color);
+        catRepository.save(cat);
+
+        Owner owner = ownerRepository.findByName(ownerName)
+                .orElseThrow(() -> new RuntimeException("Owner not found: " + ownerName));
+
+        owner.getCats().add(cat);
+        cat.setOwner(owner);
+
+        ownerRepository.save(owner);
+
+        return cat;
     }
 }

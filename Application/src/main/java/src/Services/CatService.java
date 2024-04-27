@@ -1,19 +1,21 @@
 package src.Services;
 
+import org.hibernate.annotations.NotFound;
 import org.springframework.data.domain.Example;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
-import source.Models.CatsWithFriends;
+import src.Models.Users;
 import src.Repositories.CatRepository;
-import source.Models.Cat;
-import source.Models.CatColor;
+import src.Models.Cat;
+import src.Models.CatColor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import src.Repositories.OwnerRepository;
-import src.Repositories.OwnerWithCatsRepository;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 @Service
 public class CatService {
@@ -22,8 +24,17 @@ public class CatService {
     @Autowired
     private OwnerRepository ownerRepository;
     @Autowired
-    private OwnerWithCatsRepository ownerWithCatsRepository;
+    private UserService userService;
 
+    public Cat findCatByName(String name) {
+        var cat = catRepository.findByName(name);
+
+        return cat.orElseThrow(() -> new UsernameNotFoundException("cat with name" + name + "not found"));
+    }
+
+    public void updateCatInMainTable(Cat newCat) {
+        catRepository.save(newCat);
+    }
     public void addCatToMainTable(String catName, String catBreed, LocalDate catBirthday, CatColor catColor) {
         var cat = new Cat();
         cat.setName(catName);
@@ -54,22 +65,30 @@ public class CatService {
         }
     }
 
-    public Collection<Cat> getAllBlackCats() {
+    @Transactional
+    public Collection<Cat> getCatsByColorRelatedToOwner(CatColor catColor, String ownerName) {
+        var user = userService.findUserByName(ownerName);
+        var owner = ownerRepository.findByName(user.getUsername());
+        if (owner.isEmpty()) {
+            throw new UsernameNotFoundException("Owner with name " + ownerName + " not found");
+        }
+
         var cat = new Cat();
-        cat.setColor(CatColor.black);
+        cat.setColor(catColor);
+        cat.setOwner(owner.get());
         var example = Example.of(cat);
 
         return catRepository.findAll(example);
+
     }
 
     public Collection<Cat> getAllCatsOwnedByOwner(String ownerName) {
-        var owner = ownerRepository.findByName(ownerName);
-        if (owner.isPresent()) {
-            var ownerValue = owner.get();
-            return ownerValue.getCats();
-        }
+        var owner = ownerRepository.findByName(ownerName).orElseThrow(() -> new UsernameNotFoundException("Owner with name " + ownerName + " not found"));
+        var cat = new Cat();
+        cat.setOwner(owner);
+        var example = Example.of(cat);
 
-        return new ArrayList<>();
+        return catRepository.findAll(example);
     }
 
     public Collection<Cat> listCatsFromMainTable() {

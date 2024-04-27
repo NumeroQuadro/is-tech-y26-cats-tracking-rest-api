@@ -1,6 +1,7 @@
 package WrappedModels;
 
 import lombok.*;
+import src.Models.Role;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -15,15 +16,4 @@ public class OwnerDto implements Dto {
 
     private Set<CatDto> cats = new HashSet<>();
     private final Set<OwnerWithCatsDto> ownerWithCats = new HashSet<>();
-
-    @Override
-    public String toString() {
-        return "OwnerDto{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", birthDate=" + birthDate +
-                ", cats=" + cats +
-                ", ownerWithCats=" + ownerWithCats +
-                '}';
-    }
 }

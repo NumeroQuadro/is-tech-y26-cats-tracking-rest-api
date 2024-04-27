@@ -1,6 +1,6 @@
 package src.Repositories;
 
-import source.Models.Cat;
+import src.Models.Cat;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

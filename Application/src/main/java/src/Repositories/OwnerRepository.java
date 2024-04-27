@@ -1,7 +1,7 @@
 package src.Repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import source.Models.Owner;
+import src.Models.Owner;
 
 import java.util.Optional;
 
